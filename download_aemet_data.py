@@ -31,17 +31,19 @@ def download_data_from_aemet(querystring, headers, min_year, max_year, min_month
             
             time.sleep(5)
             response = requests.request("GET", url, headers=headers, params=querystring)
-            link = json.loads(response.text)['datos']
-            f = requests.get(link)
-            data = f.json()
-            data_df = pd.json_normalize(data)
-            working_df = pd.concat([working_df, data_df[working_df.columns.intersection(data_df.columns)]])
+            if json.loads(response.text)['estado'] == 200:
+                link = json.loads(response.text)['datos']
+                f = requests.get(link)
+                data = f.json()
+                data_df = pd.json_normalize(data)
+                working_df = pd.concat([working_df, data_df[working_df.columns.intersection(data_df.columns)]])
+    return working_df
             
 def download_csv(working_df):
     file_name = '../aemet_data.csv'
-    working_df.to_csv(file_name, sep='\t', encoding='utf-8')
+    working_df.to_csv(file_name, sep='|', encoding='utf-8')
    
     
 if __name__ == "__main__":
-    download_data_from_aemet(querystring, headers, min_year, max_year, min_month, max_month, working_df)
+    working_df = download_data_from_aemet(querystring, headers, min_year, max_year, min_month, max_month, working_df)
     download_csv(working_df)
